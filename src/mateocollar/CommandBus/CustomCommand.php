@@ -6,12 +6,10 @@ use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\Player;
 use Closure;
-//use Callable;
 use mateocollar\CommandBus\Arg;
 
 class CustomCommand extends Command
 { 
-    /** @var Callable[] */
     private $rules=[];
     
 	/** @var Arg[]*/
@@ -91,10 +89,8 @@ class CustomCommand extends Command
 
 	public function execute(CommandSender $sender, $commandLabel, array $rawArgs)
 	{
-        foreach($this->rules as $r)
-        {
-            if(!$r($sender))
-            {
+        foreach($this->rules as $r){
+            if(!$r($sender)){
                 return true;
             }
         }
