@@ -145,12 +145,16 @@ class CustomCommand extends Command
     {
         if (isset($rawArgs[0])) {
             $sub = strtolower($rawArgs[0]);
+
             if (isset($this->subcommands[$sub])) {
                 $subcommand = $this->subcommands[$sub];
+
                 array_shift($rawArgs);
+
                 return $subcommand->execute($sender, $commandLabel, $rawArgs);
             }
         }
+
         foreach ($this->rules as $r) {
             if (!$r($sender)) {
                 return true;
@@ -159,6 +163,7 @@ class CustomCommand extends Command
 
         $parsed = [];
         $i = 0;
+
         foreach ($this->arguments as $arg) {
             $optional = $arg->isOptional();
             $argName = $arg->getName();
@@ -168,34 +173,43 @@ class CustomCommand extends Command
                     $parsed[$argName] = null;
                     continue;
                 }
+
                 $sender->sendMessage("Use: /" . $this->getName() . " " . $this->getUsage());
                 return true;
             }
 
             $v = $rawArgs[$i];
+
             switch ($arg->getType()) {
                 case Arg::TYPE_INT:
-                    $parsed[$argName] = (int)$v;
+                    $parsed[$argName] = (int) $v;
                     break;
+
                 case Arg::TYPE_STRING:
-                    $parsed[$argName] = (string)$v;
+                    $parsed[$argName] = (string) $v;
                     break;
+
                 case Arg::TYPE_PLAYER:
                     $parsed[$argName] = $sender->getServer()->getPlayer($v);
                     break;
+
                 default:
                     $parsed[$argName] = $v;
-                    break; #?
+                    break;
             }
+
             if ($arg->getType() === Arg::TYPE_PLAYER && $parsed[$argName] === null) {
                 $sender->sendMessage("Player not found");
                 return true;
             }
+
             $i++;
         }
+
         if ($this->handler !== null) {
-            call_user_func($this->handler, $sender, (object)$parsed);
+            call_user_func($this->handler, $sender, $parsed);
         }
+
         return true;
     }
 
@@ -221,10 +235,10 @@ class CustomCommand extends Command
     {
         $parts = [];
         foreach ($this->arguments as $arg) {
-            $opt = $arg->isOptional(); //true|false
+            $opt = $arg->isOptional();
             $n = $arg->getName();
             $parts[] = $opt ? "<{$n}?>" : "<{$n}>";
         }
-        return implode(' ', $parts);
+        return implode(" ", $parts);
     }
 }
