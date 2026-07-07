@@ -4,20 +4,36 @@ namespace mateocollar\CommandBus;
 
 use pocketmine\plugin\PluginBase;
 
+/**
+ * Class CommandBus
+ * @package mateocollar\CommandBus
+ */
 class CommandBus extends PluginBase
 {
     /** @var CommandBus */
     private static $instance;
 
-    public function onLoad(){
+    public function onLoad()
+    {
         self::$instance = $this;
     }
 
-    public static function getInstance(){
+    /**
+     * Returns the instance of the CommandBus plugin.
+     * @return CommandBus
+     */
+    public static function getInstance()
+    {
         return self::$instance;
     }
 
-    public static function create($name){
+    /**
+     * Creates a new command.
+     * @param string $name
+     * @return CustomCommand
+     */
+    public static function create(string $name)
+    {
         $cmd = new CustomCommand($name);
 
         self::$instance

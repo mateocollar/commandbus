@@ -9,20 +9,30 @@ use Closure;
 use mateocollar\CommandBus\Arg;
 
 class CustomCommand extends Command
-{ 
-    private $rules=[];
-    
-	/** @var Arg[]*/
-	private $arguments = [];
+{
+    /** @var callable[] */
+    private $rules = [];
 
-	/** @var Closure */
-	private $handler = null;
+    /** @var Arg[]*/
+    private $arguments = [];
 
-	public function __construct($name)
-	{
-		parent::__construct($name);
-	}
+    /** @var Closure */
+    private $handler = null;
 
+    /**
+     * CustomCommand constructor.
+     * @param string $name
+     */
+    public function __construct(string $name)
+    {
+        parent::__construct($name);
+    }
+
+    /**
+     * Adds a rule to the command.
+     * @param callable $r
+     * @return CustomCommand
+     */
     public function rule($r)
     {
         $this->rules[] = $r;
@@ -30,11 +40,15 @@ class CustomCommand extends Command
     }
 
     /** These methods are syntactic sugar */
-    
-	public function playerOnly()
-	{
-        return $this->rule(function($s){
-            if(!($s instanceof Player)){
+
+    /**
+     * Adds a rule to the command that only allows players to execute it.
+     * @return CustomCommand
+     */
+    public function playerOnly()
+    {
+        return $this->rule(function ($s) {
+            if (!($s instanceof Player)) {
                 $s->sendMessage("Use this command in-game");
                 return false;
             }
@@ -42,12 +56,17 @@ class CustomCommand extends Command
         });
     }
 
-    public function permission($p)
+    /**
+     * Adds a rule to the command that only allows players with the given permission to execute it.
+     * @param string $p
+     * @return CustomCommand
+     */
+    public function permission(string $p)
     {
         parent::setPermission($p);
-        return $this->rule(function($s) use($p){
+        return $this->rule(function ($s) use ($p) {
             // OPs bypass this check by default. Use rule() to override this behavior.
-            if(!$s->hasPermission($p) && !$s->isOp()){
+            if (!$s->hasPermission($p) && !$s->isOp()) {
                 $s->sendMessage("No permission");
                 return false;
             }
@@ -57,94 +76,130 @@ class CustomCommand extends Command
 
     /** end of syntactic sugar*/
 
-	public function arg(Arg $arg)
-	{
-		$this->arguments[]= $arg;
-		return $this;
-	}
+    /**
+     * Adds an argument to the command.
+     * @param Arg $arg
+     * @return CustomCommand
+     */
+    public function arg(Arg $arg)
+    {
+        $this->arguments[] = $arg;
+        return $this;
+    }
 
-	public function handler($handler)
-	{
-		$this->handler = $handler;
-		return $this;
-	}
-    
-    public function description($description)
+    /**
+     * Sets the handler for the command.
+     * @param Closure $handler
+     * @return CustomCommand
+     */
+    public function handler(Closure $handler)
+    {
+        $this->handler = $handler;
+        return $this;
+    }
+
+    /**
+     * Sets the description for the command.
+     * @param string $description
+     * @return CustomCommand
+     */
+    public function description(string $description)
     {
         parent::setDescription($description);
         return $this;
     }
-    
-    public function usage($usage)
+
+    /**
+     * Sets the usage for the command.
+     * @param string $usage
+     * @return CustomCommand
+     */
+    public function usage(string $usage)
     {
         parent::setUsage($usage);
         return $this;
     }
-    
+
+    /**
+     * Sets aliases for the command.
+     * @param array $aliases
+     * @return CustomCommand
+     */
     public function aliases(array $aliases)
     {
         parent::setAliases($aliases);
         return $this;
     }
 
-	public function execute(CommandSender $sender, $commandLabel, array $rawArgs)
-	{
-        foreach($this->rules as $r){
-            if(!$r($sender)){
+    /**
+     * Executes the command.
+     * @param CommandSender $sender
+     * @param string $commandLabel
+     * @param array $rawArgs
+     * @return bool
+     */
+    public function execute(CommandSender $sender, $commandLabel, array $rawArgs)
+    {
+        foreach ($this->rules as $r) {
+            if (!$r($sender)) {
                 return true;
             }
         }
-        
-        $parsed=[];
-        $i=0;
-        foreach($this->arguments as $arg){
-            $optional=$arg->isOptional();
-            $argName=$arg->getName();
-            
-            if(!isset($rawArgs[$i])){
-                if($optional){
+
+        $parsed = [];
+        $i = 0;
+        foreach ($this->arguments as $arg) {
+            $optional = $arg->isOptional();
+            $argName = $arg->getName();
+
+            if (!isset($rawArgs[$i])) {
+                if ($optional) {
                     $parsed[$argName] = null;
                     continue;
                 }
                 $sender->sendMessage("Use: /" . $this->getName() . " " . $this->getUsage());
                 return true;
             }
-            
-            $v=$rawArgs[$i];
-            switch($arg->getType()){
+
+            $v = $rawArgs[$i];
+            switch ($arg->getType()) {
                 case Arg::TYPE_INT:
-                    $parsed[$argName]=(int)$v;
+                    $parsed[$argName] = (int)$v;
                     break;
                 case Arg::TYPE_STRING:
-                    $parsed[$argName]=(string)$v;
+                    $parsed[$argName] = (string)$v;
                     break;
                 case Arg::TYPE_PLAYER:
-                    $parsed[$argName]=$sender->getServer()->getPlayer($v);
+                    $parsed[$argName] = $sender->getServer()->getPlayer($v);
                     break;
                 default:
-                    $parsed[$argName]=$v;
-                    break;#?
+                    $parsed[$argName] = $v;
+                    break; #?
             }
-            if($arg->getType() ===Arg::TYPE_PLAYER && $parsed[$argName] === null){
+            if ($arg->getType() === Arg::TYPE_PLAYER && $parsed[$argName] === null) {
                 $sender->sendMessage("Player not found");
                 return true;
             }
             $i++;
         }
-        if($this->handler !== null){
+        if ($this->handler !== null) {
             call_user_func($this->handler, $sender, (object)$parsed);
         }
         return true;
-	}
+    }
 
+    /**
+     * Returns the usage string for the command.
+     * @return string
+     */
     public function getUsage()
     {
-        $parts=[];
-        foreach($this->arguments as $arg){
-            $opt=$arg->isOptional();//true|false
-            $n=$arg->getName();
-            $parts[]=$opt ?"<{$n}?>":"<{$n}>";
+        $parts = [];
+        foreach ($this->arguments as $arg) {
+            $opt = $arg->isOptional(); //true|false
+            $n = $arg->getName();
+            $parts[] = $opt ? "<{$n}?>" : "<{$n}>";
         }
-        return implode(' ',$parts);
+        return implode(' ', $parts);
     }
 }
