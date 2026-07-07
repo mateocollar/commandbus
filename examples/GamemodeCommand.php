@@ -14,8 +14,8 @@ class CGamemodeCommand extends PluginBase
         $gamemodeCommand = CommandBus::create("cgm")
             ->playerOnly()
             ->permission("cgm.use")
-            ->args(Arg::int("mode"))
-            ->args(Arg::player("target")->optional())
+            ->arg(Arg::int("mode"))
+            ->arg(Arg::player("target")->optional())
             ->handler(function ($sender, $args) {
                 $mode = $args["mode"];
                 $target = $args["target"] ?: $sender;
