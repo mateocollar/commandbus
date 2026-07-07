@@ -19,6 +19,9 @@ class CustomCommand extends Command
     /** @var Closure */
     private $handler = null;
 
+    /** @var CustomCommand[] */
+    private $subcommands = [];
+
     /**
      * CustomCommand constructor.
      * @param string $name
@@ -33,7 +36,7 @@ class CustomCommand extends Command
      * @param callable $r
      * @return CustomCommand
      */
-    public function rule($r)
+    public function rule(callable $r)
     {
         $this->rules[] = $r;
         return $this;
@@ -140,6 +143,14 @@ class CustomCommand extends Command
      */
     public function execute(CommandSender $sender, $commandLabel, array $rawArgs)
     {
+        if (isset($rawArgs[0])) {
+            $sub = strtolower($rawArgs[0]);
+            if (isset($this->subcommands[$sub])) {
+                $subcommand = $this->subcommands[$sub];
+                array_shift($rawArgs);
+                return $subcommand->execute($sender, $commandLabel, $rawArgs);
+            }
+        }
         foreach ($this->rules as $r) {
             if (!$r($sender)) {
                 return true;
@@ -186,6 +197,20 @@ class CustomCommand extends Command
             call_user_func($this->handler, $sender, (object)$parsed);
         }
         return true;
+    }
+
+    /**
+     * Adds a subcommand to the command.
+     * @param string $name
+     * @param callable $cb
+     * @return CustomCommand
+     */
+    public function sub(string $name, callable $cb)
+    {
+        $cmd = new self($name);
+        $cb($cmd);
+        $this->subcommands[strtolower($name)] = $cmd;
+        return $this;
     }
 
     /**
